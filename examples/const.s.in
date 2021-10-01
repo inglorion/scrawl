@@ -1,0 +1,269 @@
+;;;; Replaces named constants by their values.
+;;;;
+;;;;           def example $f00
+;;;;           setb example $0
+;;;;   example:  bytes $00
+;;;;
+;;;; Becomes:
+;;;;
+;;;;           setb $f00 $0
+;;;;   $f00:   bytes $00
+;;;;
+;;;; The format of a definition is:
+;;;; 
+;;;;  1. The keyword "def".
+;;;;  2. One or more whitespace characters ($09, $20).
+;;;;  2. A name, consisting of bytes with values >= $61.
+;;;;  3. One or more whitespace characters.
+;;;;  4. The value, a sequence of bytes not including $0a.
+;;;;  5. A newline ($0a).
+;;;;
+;;;; As an additional restriction, names cannot be more than
+;;;; 32 characters long.
+
+;;; Main loop. Read a byte, exit if we've reached the
+;;; end of the input.
+$200:   call $300
+        bge $1 $201
+        call $220
+        exit $0
+
+;;; We have a byte. If it has value >= $61, we assume it's
+;;; part of a word.
+$201:   getb $400 $0
+        blt $61 $210
+        ;; If we have already accumulated 32 name bytes,
+        ;; don't accumulate any more.
+        getw $405 $0
+        bge $20 $210
+        ;; We have a name character and we have space;
+        ;; add it to the buffer.
+        getb $400 $0
+        setb $4fc @$405
+        getw $405 $0
+        add $1
+        setw $405 $0
+        jmp $200
+
+;;; The most recent byte is not part of a name.
+$210:   getw $405 $0
+        beq $0 $21f
+        bne $3 $250
+        locb $4f1 $4fc $0
+        locb $4f2 $3f1 $0
+        getw $405 $0
+        setw $4f3 $0
+        call $308
+        bne $0 $250
+        jmp $230
+
+;;; Not a special word.
+;;; Write the word and the
+;;; byte following it to the output.
+$21e:   call $220
+$21f:   write $1 $400 $1
+        jmp $200
+
+;;; Write the buffered word to the output and reset the
+;;; current word fill pointer.
+$220:   getw $405 $0
+        blt $1 $221
+        write $1 $4fc @$405
+        getw $3f2 $0
+        setw $405 $0
+$221:   ret
+
+;;; We've seen "def".
+;;; Skip over spaces.
+$230:   getb $400 $0
+        bne $20 $232
+        call $300
+        beq $1 $230
+        exit $1
+
+;;; Read key and store it in the string table.
+;;; @$403 is the fill pointer for the string table.
+;;; @$404 is the number of keys we have.
+$232:   getw $403 $0
+        setw $4fe @$404
+        getw $405 $0
+        xor @$405
+        setw $405 $0
+$233:   getb $400 $0
+        blt $61 $234
+        setb $4ff @$403
+        getw $403 $0
+        add $1
+        setw $403 $0
+        getw $405 $0
+        add $1
+        setw $405 $0
+        call $300
+        beq $1 $233
+        exit $1
+
+;;; Skip over spaces.
+$234:   getb $400 $0
+        bne $20 $236
+        call $300
+        beq $1 $234
+        exit $1
+
+;;; Store key length.
+$236:   getw $405 $0
+        setb $4fd @$404
+        getw $404 $0
+        add $1
+        setw $404 $0
+
+;;; Store value. The value is terminated by either a newline ($0a)
+;;; or the end of the input.
+$237:   getb $400 $0
+        beq $0a $238
+        setb $4ff @$403
+        getw $403 $0
+        add $1
+        setw $403 $0
+        call $300
+        beq $1 $237
+        beq $0 $238
+        exit $1
+
+;;; Store $0 terminator, then set next key position.
+$238:   getw $3f2 $0
+        setb $4ff @$403
+        getw $403 $0
+        add $1
+        setw $403 $0
+        getw $3f2 $0
+        setw $405 $0
+        jmp $200
+
+;;; Look up key.
+;;; The word we read is in $4fc and its length is in $405.
+;;; We use $4f7 to count keys.
+$250:   getw $3f2 $0
+        setw $4f7 $0
+$251:   getw $4f7 $0
+        bge @$404 $21e
+        ;; Compare key length.
+        getb $4fd @$4f7
+        bne @$405 $258
+        ;; Compare keys.
+        setw $4f3 $0
+        locb $4f1 $4fc $0
+        getw $4fe @$4f7
+        setw $4f0 $0
+        locb $4f2 $4ff @$4f0
+        call $308
+        bne $0 $258
+
+        ;; We matched the key! Now emit the value.
+        getw $3f2 $0
+        setw $405 $0
+        getb $4fd @$4f7
+        setw $4f0 $0
+        getw $4fe @$4f7
+        add @$4f0
+        setw $4f5 $0
+$252:   getb $4ff @$4f5
+        beq $0 $258
+        setb $4fc $0
+        getw $4f5 $0
+        add $1
+        setw $4f5 $0
+        write $1 $4fc $1
+        jmp $252
+        
+$258:   getw $4f7 $0
+        add $1
+        setw $4f7 $0
+        jmp $251
+
+;;; Reads a byte of input and stores it at $400. Returns
+;;; $1 if a byte was successfully read.
+$300:   read $0 $400 $1
+        ret
+
+;;; Compares @$4f3 bytes from @$4f1 and @$4f2.
+;;; If the bytes are the same, returns $0.
+;;; If the first byte that differs is less in
+;;; @$4f1, returns a negative value. Else,
+;;; returns a positive value. Uses $4f4
+;;; and $4f0.
+$308:   getw $3f2 $0
+        setw $4f4 $0
+
+$309:   getw $4f4 $0
+        blt @$4f3 $30b
+        getw $3f2 $0
+$30a:   ret
+
+$30b:   getb $4f2 @$4f4
+        setw $4f0 $0
+        getb $4f1 @$4f4
+        sub @$4f0
+        bne $0 $30a
+        getw $4f4 $0
+        add $1
+        setw $4f4 $0
+        jmp $309
+
+$3f0:   byte $3
+$3f1:   byte $64 $65 $66
+$3f2:   word $0
+
+;;; Buffer into which we read bytes.
+$400:   resb $1
+
+;;; Fill pointer for string table.
+$403:   word $0
+
+;;; Number of keys we have.
+$404:   word $0
+
+;;; Length of current word.
+$405:   word $0
+
+;;; Return value.
+$4f0:   resw $1
+
+;;; First parameter.
+$4f1:   resw $1
+
+;;; Second parameter.
+$4f2:   resw $1
+
+;;; Third parameter.
+$4f3:   resw $1
+
+;;; Fourth parameter.
+$4f4:   resw $1
+
+;;; Fifth parameter.
+$4f5:   resw $1
+
+;;; Sixth parameter.
+$4f6:   resw $1
+
+;;; Seventh parameter.
+$4f7:   resw $1
+
+;;; Eighth parameter.
+$4f8:   resw $1
+
+;;; Current word.
+$4fc:   resb $20
+
+;;; Key lengths.
+$4fd:   resb $400
+
+;;; Key positions.
+$4fe:   resw $400
+
+;;; String table. The table stores pairs of strings. The length
+;;; and position of the first one are encoded in the key position
+;;; table ($4fe) and key length table ($4fd).  The second string
+;;; of the pair directly follows the first and is terminated with
+;;; a $00 byte.
+$4ff:   resb $4000

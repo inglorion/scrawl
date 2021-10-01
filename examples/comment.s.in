@@ -1,0 +1,56 @@
+;;;; Removes comments.
+;;;;
+;;;; This program reads a program from standard input, removes
+;;;; comments, and outputs the resulting program to standard output.
+;;;;
+;;;; Comments start with a semicolon (;) and run until the end of the
+;;;; line.  However, the semicolon only begins a comment when it is
+;;;; not inside a string literal. String literals start and end in
+;;;; double quotes (").
+
+;;; Main loop. This reads bytes and looks for $3b (the comment marker)
+;;; and $22 (double quote, which encloses a string).
+$200:   call $220
+        bge $1 $201
+        exit $0
+
+;;; We read a character. See if it is a semicolon or double quote.
+$201:   getb $400 $0
+        beq $3b $202
+        write $1 $400 $1
+        getb $400 $0
+        beq $22 $210
+        jmp $200
+
+;;; Found a semicolon. Elide every character until the end of the line.
+$202:   call $220
+        bge $1 $203
+        exit $0
+
+;;; Got a character inside a comment. See if it is a newline.
+$203:   getb $400 $0
+        bne $0a $202
+        write $1 $400 $1
+        jmp $200
+
+;;; Found a double quote. Continue outputing characters. Inside
+;;; string literals, the only special character is the double quote,
+;;; which ends the string literal. Any other character, including
+;;; semicolon, is simply passed on to the output.
+$210:   call $220
+        bge $1 $211
+        exit $1
+
+;;; Got another character. See if it is a double quote.
+$211:   write $1 $400 $1
+        getb $400 $0
+        bne $22 $210
+        jmp $200
+
+;;; Reads a byte of input and stores it at $400. Returns
+;;; $1 if a byte was successfully read.
+$220:   read $0 $400 $1
+        ret
+
+;;; Buffer into which we read bytes.
+$400:  resb $1

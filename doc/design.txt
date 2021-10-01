@@ -1,0 +1,54 @@
+* Design Choices
+
+** Location Numbers
+
+Many programming languages identify variables and functions
+using textual identifiers. Scrawl instead uses location
+numbers. This saves the implementation from needing a lookup
+table to which identifiers can be added. Because the range
+of location numbers is fairly small, a fixed-size array can
+be used instead.
+
+Although numeric labels are much less informative than
+text, this can be remedied with a simple preprocessor
+which replaces symbolic names with numeric identifiers
+that are accepted by Scrawl.
+
+** 32-bit Little-Endian Integers
+
+Integers in Scrawl are 32 bits wide and are stored in 4 bytes in
+little-endian order. This makes programs portable (it is independent
+of the host machine's bit width and endianness). 32-bit integers
+are large enough for many applications. Little-endian was chosen
+because it is the byte order used on many contemporary computers.
+
+** Accumulator
+
+The result of evaluating an expression is stored in an implicit
+accumulator. Similarly, many expressions use the accumulator as a
+source for a value to operate on. The reason to us an implicit
+accumulator (as distinguished from, for example, specifying a
+destination location with each expression) is that this allows for
+extending the language with nested expressions (e.g.
+~add (getw $3f2 $4)~).
+
+The accumulator has no location, and therefore does not have to use
+the same representation as Scrawl values that do. It also does not
+have to be in memory.
+
+** locb and locw
+
+Scrawl does not provide a way to get or set the address associated
+with a location. However, it is useful to operate on data starting
+at some point past the beginning of the address associated with
+a location, or to have a subroutine operate on a location which
+is not known ahead of time. To enable such uses, Scrawl provides
+locb and locw. locb sets a given location to the address associated
+with another location, plus an offset in bytes. locw does the same,
+but with the offset being a number of words.
+
+Note that locb and locw are actions, not expressions. They do not
+return anything, but rather modify a given location to point at
+the computed address. There is no way to get an address as a Scrawl
+value or the other way around, which allows values and addresses
+to have different sizes and representations.

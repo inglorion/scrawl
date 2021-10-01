@@ -1,0 +1,148 @@
+[<location>] <statements>
+
+@ can be used to dereference locations. For example, to refer to the
+value stored at $0123, use @$0123.
+
+Some locations have specific uses. See Reserved Locations.
+
+* Operations
+
+** add <num>
+
+Adds <num> to the accumulator.
+
+** and <num>
+
+Computes the bitwise AND of the accumulator and <num>.
+
+** argb <num> <offset>
+
+Gets the byte at <offset> in command line argument <num>.
+
+If <offset> is beyond the last byte in the argument, the
+result is -1.
+
+If there is no command line argument numbered <num>, signals
+an error of type E_INVAL.
+
+** argc
+
+Evaluates to the number of command-line arguments supplied to the program.
+
+** arglen <loc> <num>
+
+Stores the length (in bytes) of the numbered command line argument
+in <loc>.
+
+** asr <num>
+
+Arithmetic right shift. The bits shifted in have the same value as
+the most significant bit in the accumulator before the shift.
+
+** bsr <num>
+
+Bitwise right shift. Bits shifted in are always 0.
+
+** b<cond> <loc>
+
+Continues execution at <loc> if and only if <cond> is true.
+The following conditions can be used:
+ - beq
+ - bge
+ - blt
+ - bne
+
+** call <loc>
+
+Invokes the subroutine at <loc>.
+
+** close <num>
+
+Closes file handle <num>.
+
+** exit <num>
+
+Exits the program when executed. The programs exit status is <num>.
+
+** flush <num>
+
+Writes out any buffered changes to file handle <num>.
+
+** getb <base> <offset>
+
+Evaluates to the value of the byte <offset> bytes from <base>.
+
+** getw <base> <offset>
+
+Evaluates to the value of the word <offset> words from <base>.
+
+** jmp <loc>
+
+Continues execution at <loc>.
+
+** open <loc> <len> <flags>
+
+Attemps to open a file. The name of the file to open is
+at <loc> and is <len> bytes long. <flags> can be one of
+the following values:
+
+ * 1 :: Create. Error if file already exists.
+ * 2 :: Replace. Error if file does not already exist.
+ * 3 :: Write. Creates new file or replaces existing file.
+ * 4 :: Read. Error if file does not exist.
+
+** or <num>
+
+Computes the bitwise AND of the accumulator and <num>.
+
+** read <num> <loc> <len>
+
+Reads up to <len> bytes from file handle <num> and stores them
+at <loc>. This is an expression that evaluates to the number
+of bytes actually read.
+
+** ret
+
+Returns from a subroutine. Execution continues at the operation
+following the call that invoked the subroutine.
+
+** setb <num> <base> <offset>
+
+Sets the value of the byte at <offset> bytes from <base> to <num>.
+
+** setw <num> <base> <offset>
+
+Sets the value of the word at <offset> words from <base> to <num>.
+
+** shl <num>
+
+Shifts the accumulator left by <num> positions.
+
+** sub <num>
+
+Subtracts <num> from the accumulator.
+
+** xor <num>
+
+Computes the bitwise eXclusive OR of the accumulator and <num>.
+
+** write <num> <loc> <len>
+
+Writes <len> bytes from <loc> to file handle <num>.
+
+
+* Reserved Locations
+
+Locations $0000 through $00ff are reserved for special purposes.
+
+Some of these have designated uses and may be used for those
+purposes.
+
+** $000e Error Handler
+
+Points to the error handler. An error is signalled by storing the
+error code in $000f, then calling the error handler.
+
+** $000f Error Code
+
+When signalling an error, the error code is stored here.

@@ -1,0 +1,60 @@
+Scrawl - A Tiny Programming Language
+
+Scrawl is a programming language designed to be very small, yet
+sufficient to express useful programs (such as implementations of more
+complex languages). A parser, bytecode compiler, runtime, and standard
+library have been implemented in 545 lines of C code (as counted by
+sloccount).
+
+Scrawl provides the following features:
+ - Control flow: call/return, branches based on comparisons, and
+   unconditional jumps.
+ - Integer arithmetic: addition, subtraction, and bitwise operations.
+ - Input/output: opening, creating, reading, and writing files.
+ - Command line parameters.
+
+This is enough for many useful programs.
+
+To keep the size of the implementation small, the language itself is
+intentionally very limited. For example, Scrawl offers no named
+functions or variables, identifying them by number
+instead. Expressions cannot be nested, and there are no string
+literals or even comments. Many of these could be implemented
+by a preprocessor that runs before the Scrawl compiler itself.
+Indeed, the Scrawl distribution includes a few such preprocessors
+(written in Scrawl):
+
+ - string :: translates string literals (enclosed by double quotes)
+   to byte sequences.
+ - comment :: removes comments (introduced by a ';' and running
+   until the end of the line). Semicolons enclosed by double quotes
+   are ignored.
+ - const :: allows the definition of named constants that can be used
+   instead of regular Scrawl code. This can be used, for example,
+   to give names to locations.
+
+As an example, here is a Hello program in Scrawl:
+
++BEGIN_SRC
+        write $1 $401 @$400
+        exit $0
+
+$400:   word $6
+$401:   byte $48 $65 $6c $6c $6f  $0a
++END_SRC
+
+Here is the same program, with comments, string literals, and
+named constants added to make it more readable:
+
++BEGIN_SRC
+;;; Scrawl program that prints Hello.
+def msg $401
+def msglen $400
+def stdout $1
+
+        write stdout msg @msglen
+        exit $0
+
+msglen: word $6
+msg:    byte "Hello" $0a
++END_SRC

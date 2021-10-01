@@ -1,0 +1,9 @@
+def msg $401
+def msglen $400
+def stdout $1
+
+        write stdout msg @msglen
+        exit $0
+
+msglen: word $6
+msg:    byte "Hello" $0a

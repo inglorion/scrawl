@@ -1,0 +1,62 @@
+;;;; Converts string literals to numbers
+;;;;
+;;;; "hello" -> $68 $65 $6c $6c $6f
+
+;;; Main loop. This reads bytes and looks for $22 (").
+$200:   call $220
+        bge $1 $201
+        exit $0
+
+;;; We read a character. See if it is a double quote.
+$201:   getb $400 $0
+        beq $22 $202
+        write $1 $400 $1
+        jmp $200
+
+;;; Inside a string literal.
+$202:   call $220
+        bge $1 $203
+        exit $0
+
+;;; Got a character inside a string. See if it is $22 (").
+$203:   getb $400 $0
+        beq $22 $200
+        ; Write $.
+        write $1 $3ff $1
+        ; Write hex representation of byte.
+        getb $400 $0
+        bsr $4
+        call $210
+        getb $400 $0
+        call $210
+        ; Write space.
+        write $1 $3fe $1
+        jmp $202
+
+;;; Writes accumulator as hexadecimal digit.
+$210:   and $f
+        or $30
+        blt $3a $211
+        add $27
+
+$211:   setb $401 $0
+        write $1 $401 $1
+        ret
+
+;;; Reads a byte of input and stores it at $400. Returns
+;;; $1 if a byte was successfully read.
+$220:   read $0 $400 $1
+        ret
+
+$3fe:   byte $20
+
+$3ff:   byte $24
+
+;;; Buffer into which we read bytes.
+$400:   resb $1
+
+;;; Buffer used when writing bytes.
+$401:   resb $1
+
+;;; Temporary value.
+$403:   resw $1
