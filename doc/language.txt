@@ -80,6 +80,14 @@ Evaluates to the value of the word <offset> words from <base>.
 
 Continues execution at <loc>.
 
+** locb <loc> <base> <offset>
+
+Makes <loc> point <offset> bytes beyond location <base>.
+
+** locw <loc> <base> <offset>
+
+Makes <loc> point <offset> words beyond location <base>.
+
 ** open <loc> <len> <flags>
 
 Attemps to open a file. The name of the file to open is
