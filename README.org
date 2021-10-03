@@ -35,18 +35,18 @@ Indeed, the Scrawl distribution includes a few such preprocessors
 
 As an example, here is a Hello program in Scrawl:
 
-+BEGIN_SRC
++BEGIN_EXAMPLE
         write $1 $401 @$400
         exit $0
 
 $400:   word $6
 $401:   byte $48 $65 $6c $6c $6f  $0a
-+END_SRC
++END_EXAMPLE
 
 Here is the same program, with comments, string literals, and
 named constants added to make it more readable:
 
-+BEGIN_SRC
++BEGIN_EXAMPLE
 ;;; Scrawl program that prints Hello.
 def msg $401
 def msglen $400
@@ -57,4 +57,4 @@ def stdout $1
 
 msglen: word $6
 msg:    byte "Hello" $0a
-+END_SRC
++END_EXAMPLE
