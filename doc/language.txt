@@ -29,11 +29,6 @@ an error of type E_INVAL.
 
 Evaluates to the number of command-line arguments supplied to the program.
 
-** arglen <loc> <num>
-
-Stores the length (in bytes) of the numbered command line argument
-in <loc>.
-
 ** asr <num>
 
 Arithmetic right shift. The bits shifted in have the same value as
