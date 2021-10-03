@@ -47,6 +47,10 @@ The following conditions can be used:
  - blt
  - bne
 
+** byte <num>+
+
+Defines a number of literal bytes to be included in the program.
+
 ** call <loc>
 
 Invokes the subroutine at <loc>.
@@ -104,6 +108,14 @@ Reads up to <len> bytes from file handle <num> and stores them
 at <loc>. This is an expression that evaluates to the number
 of bytes actually read.
 
+** resb <num>
+
+Reserves space for <num> bytes.
+
+** resw <num>
+
+Reserves space for <num> words.
+
 ** ret
 
 Returns from a subroutine. Execution continues at the operation
@@ -125,13 +137,17 @@ Shifts the accumulator left by <num> positions.
 
 Subtracts <num> from the accumulator.
 
-** xor <num>
+** word <num>+
 
-Computes the bitwise eXclusive OR of the accumulator and <num>.
+Defines a number of literal word-sized numbers to be included in the program.
 
 ** write <num> <loc> <len>
 
 Writes <len> bytes from <loc> to file handle <num>.
+
+** xor <num>
+
+Computes the bitwise eXclusive OR of the accumulator and <num>.
 
 
 * Reserved Locations
