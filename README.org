@@ -35,26 +35,23 @@ Indeed, the Scrawl distribution includes a few such preprocessors
 
 As an example, here is a Hello program in Scrawl:
 
-+BEGIN_EXAMPLE
-        write $1 $401 @$400
-        exit $0
-
-$400:   word $6
-$401:   byte $48 $65 $6c $6c $6f  $0a
-+END_EXAMPLE
+:         write $1 $401 @$400
+:         exit $0
+: 
+: $400:   word $6
+: $401:   byte $48 $65 $6c $6c $6f  $0a
 
 Here is the same program, with comments, string literals, and
 named constants added to make it more readable:
 
-+BEGIN_EXAMPLE
-;;; Scrawl program that prints Hello.
-def msg $401
-def msglen $400
-def stdout $1
-
-        write stdout msg @msglen
-        exit $0
-
-msglen: word $6
-msg:    byte "Hello" $0a
-+END_EXAMPLE
+: ;;; Scrawl program that prints Hello.
+: def msg $401
+: def msglen $400
+: def stdout $1
+: 
+:         write stdout msg @msglen
+:         exit $0
+: 
+: msglen: word $6
+: msg:    byte "Hello" $0a
+: 
