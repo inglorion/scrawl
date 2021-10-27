@@ -649,7 +649,7 @@ int main(int argc, char *argv[]) {
 
   parser->input = fopen(argv[1], "r");
   if (!parser->input) {
-    perror("test.skr");
+    perror(argv[1]);
     return 2;
   }
   parser->lookahead = C_NONE;
