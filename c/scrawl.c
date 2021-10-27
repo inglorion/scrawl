@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,8 +9,8 @@
 #include <sys/stat.h>
 
 #define WORD_SHIFT 2
-typedef long word_t;
-typedef unsigned long uword_t;
+typedef int32_t word_t;
+typedef uint32_t uword_t;
 
 /* Parser lookahead codes. */
 #define C_ERROR -1
