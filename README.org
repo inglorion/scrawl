@@ -3,7 +3,7 @@ Scrawl - A Tiny Programming Language
 Scrawl is a programming language designed to be very small, yet
 sufficient to express useful programs (such as implementations of more
 complex languages). A parser, bytecode compiler, runtime, and standard
-library have been implemented in 509 lines of C code (as counted by
+library have been implemented in 498 lines of C code (as counted by
 sloccount).
 
 Scrawl provides the following features:

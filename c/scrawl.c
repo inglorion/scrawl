@@ -1,6 +1,5 @@
 #include <errno.h>
 #include <fcntl.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -371,35 +370,24 @@ int lookahead(parser *parser) {
   return parser->lookahead;
 }
 
-int consume(parser *parser) {
-  int c = lookahead(parser);
+void consume(parser *parser) {
   parser->lookahead = C_NONE;
-  return c;
 }
 
 void skip_whitespace(parser *parser) {
   int c;
   for (;;) {
     c = lookahead(parser);
-    switch (c) {
-    case '\r':
-    case ' ':
-      consume(parser);
-      continue;
-    }
-    break;
+    if (c != '\r' && c != ' ') break;
+    consume(parser);
   }
 }
 
-bool sym_char(int c) {
+int sym_char(int c) {
   return c >= 'a' && c <= 'z';
 }
 
-bool sym_starter(int c) {
-  return sym_char(c);
-}
-
-bool seeing_num(parser *parser) {
+int seeing_num(parser *parser) {
   return lookahead(parser) == '$';
 }
 
@@ -533,7 +521,7 @@ int compile(parser *parser, runtime *rt) {
     for (;;) {
       skip_whitespace(parser);
       c = lookahead(parser);
-      if (sym_starter(c)) {
+      if (sym_char(c)) {
         n = parse_sym(parser, buf, sizeof(buf));
         if (strncmp(buf, "byte", 4) == 0) {
           r = compile_bytes(parser, rt);
