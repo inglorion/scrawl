@@ -138,24 +138,25 @@ void run(runtime *rt) {
 
 static word_t xlate_errno() {
   switch (errno) {
-  case 0:
-    return 0;
-  case EACCES:
-    return E_PERM;
-  case EEXIST:
-    return E_EXIST;
-  case EINVAL:
-    return E_INVAL;
-  case EIO:
-    return E_IO;
-  case ENFILE:
-    return E_NFILE;
-  case ENOENT:
-    return E_NOTFOUND;
-  case ENOSPC:
-    return E_NOSPC;
-  default:
-    return E_UNKNOWN;
+  case 0:      return 0;
+  case EACCES: return E_PERM;
+  case EEXIST: return E_EXIST;
+  case EINVAL: return E_INVAL;
+  case EIO:    return E_IO;
+  case ENFILE: return E_NFILE;
+  case ENOENT: return E_NOTFOUND;
+  case ENOSPC: return E_NOSPC;
+  default:     return E_UNKNOWN;
+  }
+}
+
+static int xlate_oflags(word_t flags) {
+  switch (flags) {
+  case 1:  return O_WRONLY | O_CREAT | O_EXCL;
+  case 2:  return O_WRONLY | O_TRUNC;
+  case 3:  return O_WRONLY | O_CREAT | O_TRUNC;
+  case 4:  return O_RDONLY;
+  default: return 0;
   }
 }
 
@@ -181,10 +182,7 @@ void op_argb(runtime *rt) {
 
   if (argn >= rt->argc) ERR(E_INVAL);
 
-  for (i = 0; i <= idx; ++i) {
-    if (rt->argv[argn][i] == 0) RET(-1);
-  }
-
+  for (i = 0; i <= idx; ++i) if (rt->argv[argn][i] == 0) RET(-1);
   rt->a = rt->argv[argn][idx];
 }
 
@@ -202,7 +200,7 @@ void op_exit(runtime *rt) {
 
 #define BINOP(NAME, SYM)                        \
   void op_ ## NAME(runtime *rt) {               \
-    rt->imask = ipbyte(rt);                              \
+    rt->imask = ipbyte(rt);                     \
     word_t x = ipword(rt);                      \
                                                 \
     rt->a = rt->a SYM x;                        \
@@ -304,23 +302,8 @@ void op_open(runtime *rt) {
   word_t loc = ipword(rt);
   word_t len = ipword(rt);
   word_t flags = ipword(rt);
-  int fd, oflags = 0;
+  int fd, oflags = xlate_oflags(flags);
   char buf[256];
-
-  switch (flags) {
-  case 1:
-    oflags = O_WRONLY | O_CREAT | O_EXCL;
-    break;
-  case 2:
-    oflags = O_WRONLY | O_TRUNC;
-    break;
-  case 3:
-    oflags = O_WRONLY | O_CREAT | O_TRUNC;
-    break;
-  case 4:
-    oflags = O_RDONLY;
-    break;
-  }
 
   memcpy(buf, rt->locations[loc], len);
   fd = open(buf, oflags);
@@ -367,9 +350,7 @@ void op_write(runtime *rt) {
   word_t loc = ipword(rt);
   word_t n = ipword(rt);
 
-  if (write(fd, rt->locations[loc], n) < 0) {
-    ERR(xlate_errno());
-  }
+  if (write(fd, rt->locations[loc], n) < 0) ERR(xlate_errno());
 }
 
 /* Parser. */
@@ -429,13 +410,9 @@ unsigned parse_num(parser *parser) {
   consume(parser);              /* consume leading '$' */
   for (;;) {
     c = lookahead(parser);
-    if (c >= '0' && c <= '9') {
-      val = (val << 4) | (c - '0');
-    } else if (c >= 'a' && c <= 'f') {
-      val = (val << 4) | (c + 10 - 'a');
-    } else {
-      break;
-    }
+    if (c >= '0' && c <= '9') val = (val << 4) | (c - '0');
+    else if (c >= 'a' && c <= 'f') val = (val << 4) | (c + 10 - 'a');
+    else break;
     consume(parser);
   }
 
@@ -448,12 +425,9 @@ size_t parse_sym(parser *parser, char *buf, size_t size) {
 
   for (i = 0; i < size; ++i) {
     c = lookahead(parser);
-    if (sym_char(c)) {
-      buf[i] = c;
-      consume(parser);
-    } else {
-      break;
-    }
+    if (!sym_char(c)) break;
+    buf[i] = c;
+    consume(parser);
   }
 
   return i;
@@ -482,9 +456,7 @@ int sym_to_opcode(const char *buf, size_t size) {
   size_t i;
 
   for (i = 0; commands[i]; ++i) {
-    if (strncmp(buf, commands[i], size) == 0) {
-      return i;
-    }
+    if (strncmp(buf, commands[i], size) == 0) return i;
   }
 
   return -1;
@@ -515,13 +487,9 @@ static int compile_bytes(parser *parser, runtime *rt) {
 }
 
 static int compile_resb(parser *parser, runtime *rt) {
-  word_t n = require_num(parser, "resb");
+  word_t n;
 
-  while (n > 0) {
-    emit_byte(0xff);
-    --n;
-  }
-  
+  for (n = require_num(parser, "resb"); n > 0; --n) emit_byte(0xff);
   return 0;
 }
 
@@ -611,9 +579,7 @@ int compile(parser *parser, runtime *rt) {
       } else if (c == '@') {
         consume(parser);
         indir |= indir_mask;
-      } else if (c == C_EOF) {
-        break;
-      } else if (c == C_ERROR) {
+      } else if (c == C_EOF || c == C_ERROR) {
         break;
       } else {
         fprintf(stderr, "unexepected character: %c ($%02x)\n", c, c);
@@ -625,11 +591,8 @@ int compile(parser *parser, runtime *rt) {
     indir_pos = NULL;
 
     /* Only if we saw a newline should we continue here. */
-    if (lookahead(parser) == '\n') {
-      consume(parser);
-    } else {
-      break;
-    }
+    if (lookahead(parser) != '\n') break;
+    consume(parser);
   }
 
   emit_byte(0);
@@ -656,10 +619,7 @@ int main(int argc, char *argv[]) {
   parser->lookahead = C_NONE;
 
   i = compile(parser, rt);
-  if (i != 0) {
-    return 1;
-  }
-
+  if (i != 0) return 1;
   run(rt);
 
   return 0;
